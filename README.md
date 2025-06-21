@@ -39,4 +39,3 @@ Thème : Plateforme de suivi de la progression académique des classes
     - `wsgi.py` : Point d’entrée pour les serveurs WSGI (synchrones).
     - `__pycache__/` : Dossier contenant les fichiers compilés Python (automatique).
 
-N’hésite pas si tu veux une description détaillée d’un fichier spécifique ou d’un dossier !
