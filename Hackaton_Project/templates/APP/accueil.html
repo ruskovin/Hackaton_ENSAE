@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+
+{% block title %}Accueil - Gestion des Notes{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- En-tête de bienvenue -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="jumbotron bg-light p-4 rounded">
+                <h1 class="display-4">
+                    <i class="fas fa-graduation-cap text-primary me-3"></i>
+                    Bienvenue dans la Gestion des Notes
+                </h1>
+                <p class="lead">Système de suivi et de gestion des notes pour école de 9 classes</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistiques générales -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card stat-card bg-primary text-white h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <div class="h3 mb-0">{{ total_etudiants }}</div>
+                        <div class="small">Étudiants</div>
+                    </div>
+                    <div class="ms-3">
+                        <i class="fas fa-user-graduate fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card stat-card bg-success text-white h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <div class="h3 mb-0">{{ total_classes }}</div>
+                        <div class="small">Classes</div>
+                    </div>
+                    <div class="ms-3">
+                        <i class="fas fa-users fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card stat-card bg-info text-white h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <div class="h3 mb-0">{{ total_matieres }}</div>
+                        <div class="small">Matières</div>
+                    </div>
+                    <div class="ms-3">
+                        <i class="fas fa-book fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card stat-card bg-warning text-white h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <div class="h3 mb-0">{{ total_notes }}</div>
+                        <div class="small">Notes saisies</div>
+                    </div>
+                    <div class="ms-3">
+                        <i class="fas fa-clipboard-list fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation rapide -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h3><i class="fas fa-tachometer-alt me-2"></i>Accès rapide</h3>
+        </div>
+        <div class="col-lg-4 col-md-6 mb-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-users fa-3x text-primary mb-3"></i>
+                    <h5 class="card-title">Gestion des Classes</h5>
+                    <p class="card-text">Voir toutes les classes et leurs étudiants</p>
+                    <a href="{% url 'liste_classes' %}" class="btn btn-primary">Voir les classes</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4 col-md-6 mb-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-user-graduate fa-3x text-success mb-3"></i>
+                    <h5 class="card-title">Gestion des Étudiants</h5>
+                    <p class="card-text">Rechercher et consulter les profils étudiants</p>
+                    <a href="{% url 'liste_etudiants' %}" class="btn btn-success">Voir les étudiants</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4 col-md-6 mb-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-chart-bar fa-3x text-info mb-3"></i>
+                    <h5 class="card-title">Statistiques</h5>
+                    <p class="card-text">Analyser les performances et tendances</p>
+                    <a href="{% url 'statistiques' %}" class="btn btn-info">Voir les stats</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vue d'ensemble des classes -->
+    {% if classes %}
+    <div class="row">
+        <div class="col-12">
+            <h3><i class="fas fa-graduation-cap me-2"></i>Vue d'ensemble des classes</h3>
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Classe</th>
+                                    <th>Niveau</th>
+                                    <th>Nombre d'étudiants</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for classe in classes %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ classe.nom }}</strong>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ classe.niveau }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-primary">{{ classe.nb_etudiants }} étudiant{{ classe.nb_etudiants|pluralize }}</span>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'detail_classe' classe.id %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye me-1"></i>Voir détails
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

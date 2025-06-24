@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+
+{% block title %}Liste des Classes - Gestion des Notes{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'accueil' %}">Accueil</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Classes</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-users me-2"></i>Liste des Classes</h2>
+        {% if user.is_staff %}
+        <a href="/admin/APP/classe/add/" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i>Ajouter une classe
+        </a>
+        {% endif %}
+    </div>
+
+    <div class="row">
+        {% for classe in classes %}
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-graduation-cap me-2"></i>{{ classe.nom }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <strong>Niveau :</strong> 
+                            <span class="badge bg-secondary">{{ classe.niveau }}</span>
+                        </div>
+                        <div class="col-12 mb-3">
+                            <strong>Année scolaire :</strong> {{ classe.annee_scolaire }}
+                        </div>
+                        <div class="col-12 mb-3">
+                            <strong>Étudiants :</strong> 
+                            <span class="badge bg-info">{{ classe.nb_etudiants }}</span>
+                        </div>
+                        {% if classe.moyenne_classe %}
+                        <div class="col-12 mb-3">
+                            <strong>Moyenne de classe :</strong>
+                            <span class="badge {% if classe.moyenne_classe >= 15 %}bg-success{% elif classe.moyenne_classe >= 12 %}bg-warning{% else %}bg-danger{% endif %}">
+                                {{ classe.moyenne_classe|floatformat:2 }}/20
+                            </span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-footer bg-light">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'detail_classe' classe.id %}" class="btn btn-outline-primary">
+                            <i class="fas fa-eye me-1"></i>Voir les étudiants
+                        </a>
+                        {% if user.is_staff %}
+                        <div class="btn-group" role="group">
+                            <a href="/admin/APP/classe/{{ classe.id }}/change/" class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-edit me-1"></i>Modifier
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info text-center">
+                <i class="fas fa-info-circle fa-2x mb-3"></i>
+                <h4>Aucune classe trouvée</h4>
+                <p>Il n'y a actuellement aucune classe dans le système.</p>
+                {% if user.is_staff %}
+                <a href="/admin/APP/classe/add/" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i>Créer la première classe
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Résumé global -->
+    {% if classes %}
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-chart-pie me-2"></i>Résumé global</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <div class="border-end">
+                                <h3 class="text-primary">{{ classes|length }}</h3>
+                                <p class="mb-0">Classes au total</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="border-end">
+                                <h3 class="text-success">
+                                    {% widthratio classes|length 1 9 %}%
+                                </h3>
+                                <p class="mb-0">Taux de remplissage (9 classes max)</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="border-end">
+                                <h3 class="text-info">
+                                    {% for classe in classes %}{{ classe.nb_etudiants|add:0 }}{% if not forloop.last %}+{% endif %}{% endfor %}
+                                </h3>
+                                <p class="mb-0">Étudiants au total</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <h3 class="text-warning">
+                                {% for classe in classes %}{{ classe.nb_etudiants|add:0 }}{% if not forloop.last %}+{% endif %}{% endfor %}
+                                {% if classes %}
+                                    / {{ classes|length }} = 
+                                    {% widthratio total_etudiants classes|length 1 %}
+                                {% endif %}
+                            </h3>
+                            <p class="mb-0">Moyenne étudiants/classe</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

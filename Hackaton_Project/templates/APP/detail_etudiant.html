@@ -1,0 +1,231 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ etudiant.nom_complet }} - Profil étudiant{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'accueil' %}">Accueil</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'liste_etudiants' %}">Étudiants</a></li>
+        <li class="breadcrumb-item active" aria-current="page">{{ etudiant.nom_complet }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Profil de l'étudiant -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-user me-2"></i>Profil</h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <i class="fas fa-user-circle fa-5x text-muted"></i>
+                        <h4 class="mt-2">{{ etudiant.nom_complet }}</h4>
+                        <span class="badge bg-secondary">{{ etudiant.numero_etudiant }}</span>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="mb-2">
+                        <strong><i class="fas fa-graduation-cap me-2"></i>Classe :</strong>
+                        <a href="{% url 'detail_classe' etudiant.classe.id %}" class="text-decoration-none">
+                            {{ etudiant.classe.nom }}
+                        </a>
+                    </div>
+                    
+                    <div class="mb-2">
+                        <strong><i class="fas fa-birthday-cake me-2"></i>Date de naissance :</strong>
+                        {{ etudiant.date_naissance|date:"d/m/Y" }}
+                    </div>
+                    
+                    {% if etudiant.email %}
+                    <div class="mb-2">
+                        <strong><i class="fas fa-envelope me-2"></i>Email :</strong>
+                        <a href="mailto:{{ etudiant.email }}">{{ etudiant.email }}</a>
+                    </div>
+                    {% endif %}
+                    
+                    {% if etudiant.telephone %}
+                    <div class="mb-2">
+                        <strong><i class="fas fa-phone me-2"></i>Téléphone :</strong>
+                        {{ etudiant.telephone }}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mb-2">
+                        <strong><i class="fas fa-calendar-plus me-2"></i>Inscription :</strong>
+                        {{ etudiant.date_inscription|date:"d/m/Y" }}
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="d-grid gap-2">
+                        {% if user.is_authenticated %}
+                        <a href="{% url 'ajouter_note' etudiant.id %}" class="btn btn-success">
+                            <i class="fas fa-plus me-1"></i>Ajouter une note
+                        </a>
+                        {% endif %}
+                        <a href="{% url 'bulletin_etudiant' etudiant.id %}" class="btn btn-info">
+                            <i class="fas fa-file-alt me-1"></i>Voir le bulletin
+                        </a>
+                        {% if user.is_staff %}
+                        <a href="/admin/APP/etudiant/{{ etudiant.id }}/change/" class="btn btn-outline-secondary">
+                            <i class="fas fa-edit me-1"></i>Modifier
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <!-- Résumé des performances -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-chart-line me-2"></i>Résumé des performances</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <h3 class="text-primary">{{ notes|length }}</h3>
+                            <p class="mb-0">Notes</p>
+                        </div>
+                        <div class="col-md-3">
+                            {% if moyenne_generale %}
+                            <h3 class="{% if moyenne_generale >= 15 %}text-success{% elif moyenne_generale >= 12 %}text-warning{% elif moyenne_generale >= 10 %}text-info{% else %}text-danger{% endif %}">
+                                {{ moyenne_generale|floatformat:2 }}
+                            </h3>
+                            <p class="mb-0">Moyenne générale</p>
+                            {% else %}
+                            <h3 class="text-muted">-</h3>
+                            <p class="mb-0">Pas de moyenne</p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            <h3 class="text-info">{{ moyennes_matieres|length }}</h3>
+                            <p class="mb-0">Matières évaluées</p>
+                        </div>
+                        <div class="col-md-3">
+                            {% if notes %}
+                            <h3 class="text-warning">{{ notes.0.date_evaluation|date:"d/m" }}</h3>
+                            <p class="mb-0">Dernière note</p>
+                            {% else %}
+                            <h3 class="text-muted">-</h3>
+                            <p class="mb-0">Aucune note</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Moyennes par matière -->
+            {% if moyennes_matieres %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-book me-2"></i>Moyennes par matière</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for matiere, moyenne in moyennes_matieres.items %}
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex justify-content-between align-items-center p-2 border rounded">
+                                <strong>{{ matiere }}</strong>
+                                {% if moyenne %}
+                                <span class="badge {% if moyenne >= 15 %}bg-success{% elif moyenne >= 12 %}bg-warning{% elif moyenne >= 10 %}bg-info{% else %}bg-danger{% endif %}">
+                                    {{ moyenne }}/20
+                                </span>
+                                {% else %}
+                                <span class="text-muted">Pas de note</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Historique des notes -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-history me-2"></i>Historique des notes</h5>
+                </div>
+                <div class="card-body">
+                    {% if notes %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Matière</th>
+                                    <th>Type</th>
+                                    <th>Note</th>
+                                    <th>Professeur</th>
+                                    <th>Commentaire</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for note in notes %}
+                                <tr>
+                                    <td>{{ note.date_evaluation|date:"d/m/Y" }}</td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ note.matiere.nom }}</span>
+                                    </td>
+                                    <td>{{ note.type_evaluation.nom }}</td>
+                                    <td>
+                                        <span class="badge {% if note.note >= 16 %}bg-success{% elif note.note >= 14 %}bg-info{% elif note.note >= 12 %}bg-warning{% elif note.note >= 10 %}bg-secondary{% else %}bg-danger{% endif %}">
+                                            {{ note.note }}/20
+                                        </span>
+                                    </td>
+                                    <td>{{ note.professeur.user.get_full_name|default:note.professeur.user.username }}</td>
+                                    <td>
+                                        {% if note.commentaire %}
+                                            <span data-bs-toggle="tooltip" title="{{ note.commentaire }}">
+                                                <i class="fas fa-comment-dots"></i>
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-clipboard fa-3x text-muted mb-3"></i>
+                        <h4>Aucune note</h4>
+                        <p class="text-muted">Cet étudiant n'a encore aucune note.</p>
+                        {% if user.is_authenticated %}
+                        <a href="{% url 'ajouter_note' etudiant.id %}" class="btn btn-primary">
+                            <i class="fas fa-plus me-1"></i>Ajouter la première note
+                        </a>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Initialiser les tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+</script>
+{% endblock %}

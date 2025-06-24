@@ -1,0 +1,221 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ classe.nom }} - Détail de la classe{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'accueil' %}">Accueil</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'liste_classes' %}">Classes</a></li>
+        <li class="breadcrumb-item active" aria-current="page">{{ classe.nom }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- En-tête de la classe -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h3 class="mb-0">
+                            <i class="fas fa-graduation-cap me-2"></i>{{ classe.nom }} - {{ classe.niveau }}
+                        </h3>
+                        {% if user.is_staff %}
+                        <div class="btn-group">
+                            <a href="/admin/APP/etudiant/add/?classe={{ classe.id }}" class="btn btn-light btn-sm">
+                                <i class="fas fa-user-plus me-1"></i>Ajouter un étudiant
+                            </a>
+                            <a href="/admin/APP/classe/{{ classe.id }}/change/" class="btn btn-outline-light btn-sm">
+                                <i class="fas fa-edit me-1"></i>Modifier la classe
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h6><i class="fas fa-calendar me-1"></i>Année scolaire</h6>
+                            <p class="text-muted">{{ classe.annee_scolaire }}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <h6><i class="fas fa-users me-1"></i>Nombre d'étudiants</h6>
+                            <p class="text-muted">{{ etudiants|length }} étudiant{{ etudiants|length|pluralize }}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <h6><i class="fas fa-chart-line me-1"></i>Moyenne de classe</h6>
+                            {% if etudiants %}
+                                {% for etudiant in etudiants %}
+                                    {% if etudiant.moyenne %}{{ etudiant.moyenne|add:0 }}{% endif %}
+                                {% endfor %}
+                            {% endif %}
+                            <p class="text-muted">Calculée automatiquement</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtres et recherche -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-6">
+                            <input type="text" name="search" class="form-control" placeholder="Rechercher un étudiant..." value="{{ request.GET.search }}">
+                        </div>
+                        <div class="col-md-3">
+                            <select name="matiere" class="form-control">
+                                <option value="">Toutes les matières</option>
+                                {% for matiere in matieres %}
+                                    <option value="{{ matiere.id }}" {% if request.GET.matiere == matiere.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ matiere.nom }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-search me-1"></i>Rechercher
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Liste des étudiants -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-user-graduate me-2"></i>Liste des étudiants</h5>
+                </div>
+                <div class="card-body">
+                    {% if etudiants %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Nom complet</th>
+                                    <th>Numéro étudiant</th>
+                                    <th>Date de naissance</th>
+                                    <th>Moyenne générale</th>
+                                    <th>Nombre de notes</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for etudiant in etudiants %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ etudiant.nom_complet }}</strong>
+                                        {% if etudiant.email %}
+                                            <br><small class="text-muted">{{ etudiant.email }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ etudiant.numero_etudiant }}</span>
+                                    </td>
+                                    <td>{{ etudiant.date_naissance|date:"d/m/Y" }}</td>
+                                    <td>
+                                        {% if etudiant.moyenne %}
+                                            <span class="badge {% if etudiant.moyenne >= 15 %}bg-success{% elif etudiant.moyenne >= 12 %}bg-warning{% elif etudiant.moyenne >= 10 %}bg-info{% else %}bg-danger{% endif %}">
+                                                {{ etudiant.moyenne|floatformat:2 }}/20
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted">Pas de notes</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-primary">{{ etudiant.nb_notes }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'detail_etudiant' etudiant.id %}" class="btn btn-outline-primary">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            {% if user.is_authenticated %}
+                                            <a href="{% url 'ajouter_note' etudiant.id %}" class="btn btn-outline-success">
+                                                <i class="fas fa-plus"></i>
+                                            </a>
+                                            {% endif %}
+                                            <a href="{% url 'bulletin_etudiant' etudiant.id %}" class="btn btn-outline-info">
+                                                <i class="fas fa-file-alt"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-user-slash fa-3x text-muted mb-3"></i>
+                        <h4>Aucun étudiant trouvé</h4>
+                        <p class="text-muted">Cette classe ne contient actuellement aucun étudiant.</p>
+                        {% if user.is_staff %}
+                        <a href="/admin/APP/etudiant/add/?classe={{ classe.id }}" class="btn btn-primary">
+                            <i class="fas fa-user-plus me-1"></i>Ajouter le premier étudiant
+                        </a>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistiques de la classe -->
+    {% if etudiants %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-chart-bar me-2"></i>Statistiques de la classe</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <h4 class="text-primary">{{ etudiants|length }}</h4>
+                            <p class="mb-0">Étudiants</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h4 class="text-success">
+                                {% if etudiants %}
+                                    {% for etudiant in etudiants %}
+                                        {% if etudiant.moyenne and etudiant.moyenne >= 10 %}1{% else %}0{% endif %}
+                                    {% endfor %}
+                                {% endif %}
+                            </h4>
+                            <p class="mb-0">Ont la moyenne</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h4 class="text-info">
+                                {% for etudiant in etudiants %}{{ etudiant.nb_notes|add:0 }}{% if not forloop.last %}+{% endif %}{% endfor %}
+                            </h4>
+                            <p class="mb-0">Notes au total</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h4 class="text-warning">
+                                {% if etudiants %}
+                                    {% for etudiant in etudiants %}{{ etudiant.nb_notes|add:0 }}{% if not forloop.last %}+{% endif %}{% endfor %} / {{ etudiants|length }}
+                                {% endif %}
+                            </h4>
+                            <p class="mb-0">Notes par étudiant</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

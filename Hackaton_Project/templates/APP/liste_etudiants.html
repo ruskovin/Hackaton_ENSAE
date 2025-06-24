@@ -1,0 +1,248 @@
+{% extends 'base.html' %}
+
+{% block title %}Liste des Étudiants - Gestion des Notes{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'accueil' %}">Accueil</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Étudiants</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-user-graduate me-2"></i>Liste des Étudiants</h2>
+        {% if user.is_staff %}
+        <a href="/admin/APP/etudiant/add/" class="btn btn-primary">
+            <i class="fas fa-user-plus me-1"></i>Ajouter un étudiant
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- Filtres et recherche -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-6">
+                    <label for="search" class="form-label">Recherche</label>
+                    <input type="text" 
+                           id="search"
+                           name="search" 
+                           class="form-control" 
+                           placeholder="Nom, prénom ou numéro étudiant..." 
+                           value="{{ search_query }}">
+                </div>
+                <div class="col-md-4">
+                    <label for="classe" class="form-label">Classe</label>
+                    <select name="classe" id="classe" class="form-control">
+                        <option value="">Toutes les classes</option>
+                        {% for classe in classes %}
+                            <option value="{{ classe.id }}" {% if classe_filter == classe.id|stringformat:"s" %}selected{% endif %}>
+                                {{ classe.nom }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search me-1"></i>Rechercher
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Liste des étudiants -->
+    <div class="card">
+        <div class="card-header">
+            <h5><i class="fas fa-list me-2"></i>Étudiants 
+                {% if search_query or classe_filter %}
+                    (résultats filtrés)
+                {% endif %}
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if etudiants %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Nom complet</th>
+                            <th>Numéro</th>
+                            <th>Classe</th>
+                            <th>Date de naissance</th>
+                            <th>Moyenne générale</th>
+                            <th>Nombre de notes</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for etudiant in etudiants %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-user-circle fa-2x text-muted me-2"></i>
+                                    <div>
+                                        <strong>{{ etudiant.nom_complet }}</strong>
+                                        {% if etudiant.email %}
+                                            <br><small class="text-muted">{{ etudiant.email }}</small>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">{{ etudiant.numero_etudiant }}</span>
+                            </td>
+                            <td>
+                                <a href="{% url 'detail_classe' etudiant.classe.id %}" class="text-decoration-none">
+                                    <span class="badge bg-primary">{{ etudiant.classe.nom }}</span>
+                                </a>
+                            </td>
+                            <td>{{ etudiant.date_naissance|date:"d/m/Y" }}</td>
+                            <td>
+                                {% if etudiant.moyenne %}
+                                    <span class="badge {% if etudiant.moyenne >= 15 %}bg-success{% elif etudiant.moyenne >= 12 %}bg-warning{% elif etudiant.moyenne >= 10 %}bg-info{% else %}bg-danger{% endif %}">
+                                        {{ etudiant.moyenne|floatformat:2 }}/20
+                                    </span>
+                                {% else %}
+                                    <span class="text-muted">Pas de notes</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-info">{{ etudiant.nb_notes }}</span>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'detail_etudiant' etudiant.id %}" 
+                                       class="btn btn-outline-primary"
+                                       title="Voir le profil">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    {% if user.is_authenticated %}
+                                    <a href="{% url 'ajouter_note' etudiant.id %}" 
+                                       class="btn btn-outline-success"
+                                       title="Ajouter une note">
+                                        <i class="fas fa-plus"></i>
+                                    </a>
+                                    {% endif %}
+                                    <a href="{% url 'bulletin_etudiant' etudiant.id %}" 
+                                       class="btn btn-outline-info"
+                                       title="Voir le bulletin">
+                                        <i class="fas fa-file-alt"></i>
+                                    </a>
+                                    {% if user.is_staff %}
+                                    <a href="/admin/APP/etudiant/{{ etudiant.id }}/change/" 
+                                       class="btn btn-outline-secondary"
+                                       title="Modifier">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if etudiants.has_other_pages %}
+            <nav aria-label="Navigation pagination">
+                <ul class="pagination justify-content-center">
+                    {% if etudiants.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if classe_filter %}&classe={{ classe_filter }}{% endif %}">
+                                &laquo; Premier
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ etudiants.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if classe_filter %}&classe={{ classe_filter }}{% endif %}">
+                                Précédent
+                            </a>
+                        </li>
+                    {% endif %}
+
+                    <li class="page-item active">
+                        <span class="page-link">
+                            Page {{ etudiants.number }} sur {{ etudiants.paginator.num_pages }}
+                        </span>
+                    </li>
+
+                    {% if etudiants.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ etudiants.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if classe_filter %}&classe={{ classe_filter }}{% endif %}">
+                                Suivant
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ etudiants.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if classe_filter %}&classe={{ classe_filter }}{% endif %}">
+                                Dernier &raquo;
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                <h4>Aucun étudiant trouvé</h4>
+                {% if search_query or classe_filter %}
+                    <p class="text-muted">Aucun étudiant ne correspond à vos critères de recherche.</p>
+                    <a href="{% url 'liste_etudiants' %}" class="btn btn-secondary">
+                        <i class="fas fa-times me-1"></i>Effacer les filtres
+                    </a>
+                {% else %}
+                    <p class="text-muted">Il n'y a actuellement aucun étudiant dans le système.</p>
+                    {% if user.is_staff %}
+                    <a href="/admin/APP/etudiant/add/" class="btn btn-primary">
+                        <i class="fas fa-user-plus me-1"></i>Ajouter le premier étudiant
+                    </a>
+                    {% endif %}
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Résumé des résultats -->
+    {% if etudiants %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <h4 class="text-primary">{{ etudiants.paginator.count }}</h4>
+                            <p class="mb-0">Étudiants au total</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h4 class="text-success">
+                                {% for etudiant in etudiants %}
+                                    {% if etudiant.moyenne and etudiant.moyenne >= 10 %}1{% else %}0{% endif %}
+                                {% endfor %}
+                            </h4>
+                            <p class="mb-0">Ont la moyenne (cette page)</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h4 class="text-info">
+                                {% for etudiant in etudiants %}{{ etudiant.nb_notes|add:0 }}{% if not forloop.last %}+{% endif %}{% endfor %}
+                            </h4>
+                            <p class="mb-0">Notes au total (cette page)</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h4 class="text-warning">{{ etudiants.paginator.num_pages }}</h4>
+                            <p class="mb-0">Pages de résultats</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

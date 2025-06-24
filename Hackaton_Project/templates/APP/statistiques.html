@@ -1,0 +1,264 @@
+{% extends 'base.html' %}
+
+{% block title %}Statistiques - Gestion des Notes{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'accueil' %}">Accueil</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Statistiques</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-chart-bar me-2"></i>Statistiques générales</h2>
+    </div>
+
+    <!-- Moyennes par classe -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-users me-2"></i>Moyennes par classe</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="classesChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Moyennes par matière -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-book me-2"></i>Moyennes par matière</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="matieresChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Répartition des notes -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-chart-pie me-2"></i>Répartition des notes</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="repartitionChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tableaux de données -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-table me-2"></i>Données détaillées</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Moyennes par classe -->
+                    <h6>Moyennes par classe :</h6>
+                    <div class="table-responsive mb-3">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Classe</th>
+                                    <th>Moyenne</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for classe, moyenne in stats.moyennes_par_classe.items %}
+                                <tr>
+                                    <td>{{ classe }}</td>
+                                    <td>
+                                        <span class="badge {% if moyenne >= 15 %}bg-success{% elif moyenne >= 12 %}bg-warning{% elif moyenne >= 10 %}bg-info{% else %}bg-danger{% endif %}">
+                                            {{ moyenne }}/20
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Moyennes par matière -->
+                    <h6>Moyennes par matière :</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Matière</th>
+                                    <th>Moyenne</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for matiere, moyenne in stats.moyennes_par_matiere.items %}
+                                <tr>
+                                    <td>{{ matiere }}</td>
+                                    <td>
+                                        <span class="badge {% if moyenne >= 15 %}bg-success{% elif moyenne >= 12 %}bg-warning{% elif moyenne >= 10 %}bg-info{% else %}bg-danger{% endif %}">
+                                            {{ moyenne }}/20
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Résumé global -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-info-circle me-2"></i>Résumé global</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <h3 class="text-primary">
+                                {% for count in stats.repartition_notes.values %}{{ count|add:0 }}{% if not forloop.last %}+{% endif %}{% endfor %}
+                            </h3>
+                            <p class="mb-0">Notes au total</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h3 class="text-success">{{ stats.repartition_notes.15-20 }}</h3>
+                            <p class="mb-0">Excellentes notes (15-20)</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h3 class="text-warning">{{ stats.repartition_notes.10-15 }}</h3>
+                            <p class="mb-0">Notes correctes (10-15)</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h3 class="text-danger">
+                                {{ stats.repartition_notes.0-5|add:stats.repartition_notes.5-10 }}
+                            </h3>
+                            <p class="mb-0">Notes insuffisantes (&lt;10)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const stats = {{ stats_json|safe }};
+    
+    // Graphique des moyennes par classe
+    const classesCtx = document.getElementById('classesChart').getContext('2d');
+    new Chart(classesCtx, {
+        type: 'bar',
+        data: {
+            labels: Object.keys(stats.moyennes_par_classe),
+            datasets: [{
+                label: 'Moyenne de classe',
+                data: Object.values(stats.moyennes_par_classe),
+                backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 20,
+                    ticks: {
+                        callback: function(value) {
+                            return value + '/20';
+                        }
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+
+    // Graphique des moyennes par matière
+    const matieresCtx = document.getElementById('matieresChart').getContext('2d');
+    new Chart(matieresCtx, {
+        type: 'horizontalBar',
+        data: {
+            labels: Object.keys(stats.moyennes_par_matiere),
+            datasets: [{
+                label: 'Moyenne par matière',
+                data: Object.values(stats.moyennes_par_matiere),
+                backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                borderColor: 'rgba(255, 99, 132, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    max: 20,
+                    ticks: {
+                        callback: function(value) {
+                            return value + '/20';
+                        }
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+
+    // Graphique de répartition des notes
+    const repartitionCtx = document.getElementById('repartitionChart').getContext('2d');
+    new Chart(repartitionCtx, {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(stats.repartition_notes),
+            datasets: [{
+                data: Object.values(stats.repartition_notes),
+                backgroundColor: [
+                    'rgba(220, 53, 69, 0.8)',   // 0-5: rouge
+                    'rgba(255, 193, 7, 0.8)',   // 5-10: jaune
+                    'rgba(23, 162, 184, 0.8)',  // 10-15: bleu
+                    'rgba(40, 167, 69, 0.8)'    // 15-20: vert
+                ],
+                borderColor: [
+                    'rgba(220, 53, 69, 1)',
+                    'rgba(255, 193, 7, 1)',
+                    'rgba(23, 162, 184, 1)',
+                    'rgba(40, 167, 69, 1)'
+                ],
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}
