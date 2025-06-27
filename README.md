@@ -38,7 +38,3 @@ Thème : Plateforme de suivi de la progression académique des classes
     - `urls.py` : Définition des routes (URL) du projet.
     - `wsgi.py` : Point d’entrée pour les serveurs WSGI (synchrones).
     - `__pycache__/` : Dossier contenant les fichiers compilés Python (automatique).
-<<<<<<< HEAD
-=======
-
->>>>>>> e7775b161474e5f5fe9b09f050e65cace55cfd26
